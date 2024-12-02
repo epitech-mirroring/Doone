@@ -1,0 +1,161 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["debian-openssl-1.1.x", "linux-musl-openssl-3.0.x", "darwin-arm64"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     String                   @id @default(cuid())
+  email                  String                   @unique
+  emailVerified          Boolean                  @default(false)
+  name                   String
+  password               String
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  organizations          OrganizationUsers[]
+  notifications          Notification[]           @relation("UserNotifications")
+  organizationInvitation OrganizationInvitation[]
+  teams                  TeamUsers[]
+  policies               Policy[]                 @relation("UserPolicy")
+  ownedOrganizations     Organization[]
+  ownedTeams             Team[]                   @relation("TeamOwner")
+  verificationRequest    VerificationRequest?
+}
+
+model VerificationRequest {
+  id      String   @id @default(cuid())
+  userId  String   @unique
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code    Int
+  expires DateTime
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+model Project {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id])
+}
+
+model Team {
+  id             String       @id @default(cuid())
+  name           String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  ownerId        String
+  owner          User         @relation("TeamOwner", fields: [ownerId], references: [id])
+  users          TeamUsers[]
+  projects       Project[]
+}
+
+model TeamUsers {
+  id     String @id @default(cuid())
+  userId String
+  teamId String
+  user   User   @relation(fields: [userId], references: [id])
+  team   Team   @relation(fields: [teamId], references: [id])
+  role   Role   @default(MEMBER)
+}
+
+model Organization {
+  id        String                   @id @default(cuid())
+  name      String
+  createdAt DateTime                 @default(now())
+  updatedAt DateTime                 @updatedAt
+  users     OrganizationUsers[]
+  invites   OrganizationInvitation[]
+  teams     Team[]
+  ownerId   String
+  owner     User                     @relation(fields: [ownerId], references: [id])
+}
+
+model OrganizationUsers {
+  id             String       @id @default(cuid())
+  userId         String
+  organizationId String
+  user           User         @relation(fields: [userId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  role           Role         @default(MEMBER)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  ERROR
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  message     String
+  redirectUrl String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  userId      String
+  read        Boolean          @default(false)
+  type        NotificationType @default(INFO)
+  icon        String
+  user        User             @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum OrganizationInvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model OrganizationInvitation {
+  id             String                       @id @default(cuid())
+  organizationId String
+  organization   Organization                 @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status         OrganizationInvitationStatus @default(PENDING)
+  createdAt      DateTime                     @default(now())
+  updatedAt      DateTime                     @updatedAt
+}
+
+// ABAC
+
+model Policy {
+  id        String   @id
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  rules     Rule[]
+  users     User[]   @relation("UserPolicy")
+}
+
+enum Effect {
+  ALLOW
+  DENY
+}
+
+model Rule {
+  id           String @id @default(cuid())
+  action       String
+  effect       Effect
+  resourceType String
+  condition    String
+  policyId     String
+  policy       Policy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+}
