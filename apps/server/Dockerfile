@@ -37,6 +37,6 @@ RUN bunx prisma generate
 USER bun
 EXPOSE 4040/tcp
 ENV INFISICAL_ENV=prod
-ENTRYPOINT [ "infisical", "run", "--projectId", "d62d9721-fadc-402d-b882-069f1260bab5", "--path", "/server", "--env", "$INFISICAL_ENV", "--", "bun", "run", "main.js"]
+ENTRYPOINT [ "infisical", "run", "--projectId", "d62d9721-fadc-402d-b882-069f1260bab5", "--path", "/server", "--env", "$INFISICAL_ENV", "--token", "$INFISICAL_TOKEN", "--", "bun", "run", "main.js"]
 
 
