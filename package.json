@@ -2,9 +2,9 @@
   "name": "doone",
   "private": true,
   "scripts": {
-    "dev:server": "cd apps/server && npm run start:dev",
-    "dev:web": "cd apps/web && npm run dev",
-    "dev": "concurrently --kill-others -p \"[{name}]\" -n \"Server,Web\" -c \"yellow.bold,cyan.bold\" \"npm run dev:server\" \"npm run dev:web\""
+    "dev:server": "cd apps/server && infisical run --env dev --path=\"/server\" -- bun run start:dev",
+    "dev:web": "cd apps/web && infisical run --env dev --path=\"/web\" -- bun run dev",
+    "dev": "concurrently --kill-others -p \"[{name}]\" -n \"Server,Web\" -c \"yellow.bold,cyan.bold\" \"bun run dev:server\" \"bun run dev:web\""
   },
   "devDependencies": {
     "concurrently": "^6.2.2"
