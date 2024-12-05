@@ -18,7 +18,7 @@ export const useOrganizationStore = defineStore('organization', () => {
   async function fetchOrganizations() {
     const config = useRuntimeConfig();
     const user = useUserStore();
-    const endpoint = config.public['API_BASE_URL'] + '/organizations/mine';
+    const endpoint = config.public['apiBaseUrl'] + '/organizations/mine';
     const response = await user.fetch(endpoint, {
       method: 'GET'
     });
