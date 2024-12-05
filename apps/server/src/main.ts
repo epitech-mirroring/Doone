@@ -28,6 +28,7 @@ async function main() {
   }
 
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
+  app.setGlobalPrefix('api');
   await app.listen(4040);
 }
 
