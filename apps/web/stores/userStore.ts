@@ -1,4 +1,4 @@
-import { defineStore } from "pinia";
+import { defineStore } from 'pinia';
 
 export interface User {
   id: string;
@@ -39,7 +39,7 @@ export const useUserStore = defineStore('user', () => {
 
    async function login(email: string, password: string): Promise<void> {
     const config = useRuntimeConfig();
-    const endpoint = config.public['api.baseURL'] + '/auth/login';
+    const endpoint = config.public['API_BASE_URL'] + '/auth/login';
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -65,7 +65,7 @@ export const useUserStore = defineStore('user', () => {
     statusCode: number
   }> {
     const config = useRuntimeConfig();
-    const endpoint = config.public['api.baseURL'] + '/users/register';
+    const endpoint = config.public['API_BASE_URL'] + '/users/register';
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -91,7 +91,7 @@ export const useUserStore = defineStore('user', () => {
     }
 
     const config = useNuxtApp().$config;
-    const endpoint = config.public['api.baseURL'] + '/auth/refresh';
+    const endpoint = config.public['API_BASE_URL'] + '/auth/refresh';
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -126,7 +126,7 @@ export const useUserStore = defineStore('user', () => {
     }
 
     const config = useRuntimeConfig();
-    const endpoint = config.public['api.baseURL'] + '/users/me';
+    const endpoint = config.public['API_BASE_URL'] + '/users/me';
     await fetch(endpoint, {
       headers: {
         Authorization: `Bearer ${_accessToken.value}`,

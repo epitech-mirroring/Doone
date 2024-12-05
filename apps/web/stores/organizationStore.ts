@@ -1,4 +1,4 @@
-import { defineStore } from "pinia";
+import { defineStore } from 'pinia';
 
 export type SmallTeam = {
   id: string;
@@ -18,7 +18,7 @@ export const useOrganizationStore = defineStore('organization', () => {
   async function fetchOrganizations() {
     const config = useRuntimeConfig();
     const user = useUserStore();
-    const endpoint = config.public['api.baseURL'] + '/organizations/mine';
+    const endpoint = config.public['API_BASE_URL'] + '/organizations/mine';
     const response = await user.fetch(endpoint, {
       method: 'GET'
     });
