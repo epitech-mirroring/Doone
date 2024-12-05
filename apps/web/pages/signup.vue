@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { Stepper } from "@/components/ui/stepper";
-import { Button } from "@/components/ui/button";
-import { toTypedSchema } from "@vee-validate/zod";
-import * as z from "zod";
-import DooneLogo from "~/components/DooneLogo.vue";
-import zxcvbn from "zxcvbn";
-import { PinInput, PinInputGroup } from "~/components/ui/pin-input";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Separator } from "~/components/ui/separator";
+import { Stepper } from '@/components/ui/stepper';
+import { Button } from '@/components/ui/button';
+import { toTypedSchema } from '@vee-validate/zod';
+import * as z from 'zod';
+import DooneLogo from '~/components/DooneLogo.vue';
+import zxcvbn from 'zxcvbn';
+import { PinInput, PinInputGroup } from '~/components/ui/pin-input';
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
+import { Separator } from '~/components/ui/separator';
 
 
 const router = useRouter();
@@ -30,7 +30,6 @@ const steps: {
     altDescription: 'Fill in the fields and create your account',
     icon: 'fa-user',
     onSubmit: (values: { email: string; firstName: string; lastName: string; password: string }) => {
-      console.log(values);
       user.register(values.email, values.password, values.firstName + " " + values.lastName.toUpperCase());
     },
   },
