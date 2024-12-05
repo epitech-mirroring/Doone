@@ -35,6 +35,7 @@
   },
   "devDependencies": {
     "@types/zxcvbn": "^4.4.5",
+    "@nuxt/eslint": "^0.7.2",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
     "sass-embedded": "^1.81.0",

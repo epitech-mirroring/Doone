@@ -6,4 +6,5 @@ Dockerfile*
 helm-charts
 .env
 .idea
-dist
+.nuxt
+.output
