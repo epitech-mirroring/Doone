@@ -34,4 +34,4 @@ USER bun
 EXPOSE 3000/tcp
 ENV INFISICAL_ENV=prod
 ENV API_BASE_URL=https://doone.it/api
-CMD infisical run --projectId d62d9721-fadc-402d-b882-069f1260bab5 --path "/web" --env $INFISICAL_ENV --token="$INFISICAL_TOKEN" --domain https://secrets.place2die.com -- bun run server/main.js
+CMD infisical run --projectId d62d9721-fadc-402d-b882-069f1260bab5 --path "/web" --env $INFISICAL_ENV --token="$INFISICAL_TOKEN" --domain https://secrets.place2die.com -- bun run server/index.mjs
