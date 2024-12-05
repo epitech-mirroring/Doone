@@ -21,7 +21,7 @@ COPY . .
 
 ENV NODE_ENV=production
 RUN bunx prisma generate
-RUN bun test
+RUN bun run test
 RUN bun run build
 
 FROM base AS release
