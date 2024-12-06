@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { Button } from "@/components/ui/button";
-import { toTypedSchema } from "@vee-validate/zod";
-import * as z from "zod";
-import DooneLogo from "~/components/DooneLogo.vue";
-import { Checkbox } from "~/components/ui/checkbox";
+import { Button } from '@/components/ui/button';
+import { toTypedSchema } from '@vee-validate/zod';
+import * as z from 'zod';
+import DooneLogo from '~/components/DooneLogo.vue';
+import { Checkbox } from '~/components/ui/checkbox';
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -27,7 +27,7 @@ const onSubmit = async (values: Record<string, string | boolean>): Promise<boole
 };
 
 useSeoMeta({
-  title: 'Login',
+  title: 'Doone | Login',
   description: 'Login to your account',
 });
 

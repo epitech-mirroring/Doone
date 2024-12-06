@@ -162,7 +162,7 @@ const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
 
 useSeoMeta({
-  title: 'Sign Up',
+  title: 'Doone | Sign Up',
   description: 'Create a free account and start managing your tasks',
 });
 

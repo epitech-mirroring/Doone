@@ -72,6 +72,11 @@ const selectedOrganization = ref<Organization | null>(null);
 onMounted(() => {
   selectedOrganization.value = organizationStore.organizations[0];
 });
+
+useSeoMeta({
+  title: 'Doone | Dashboard',
+  description: 'Manage your projects and collaborate with your team members',
+});
 </script>
 
 <template>

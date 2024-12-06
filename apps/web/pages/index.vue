@@ -1,7 +1,12 @@
 <script setup lang="ts">
-import DooneLogo from "~/components/DooneLogo.vue";
+import DooneLogo from '~/components/DooneLogo.vue';
 
 const router = useRouter();
+
+useSeoMeta({
+  title: "Doone",
+  description: "You can finally move your project from in progress to Doone",
+});
 </script>
 
 <template>
