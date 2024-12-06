@@ -1,22 +1,22 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
-import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { TokenPayload, TokenType, User } from '../../types';
 import { AuthContext } from './auth.context';
 import { Request } from 'express';
+import { PrismaService } from '../../providers/prisma';
 
 @Injectable()
 export class AuthService {
   @Inject(JwtService)
   private readonly _jwtService: JwtService;
 
-  @Inject(UsersService)
-  private readonly _usersService: UsersService;
-
   @Inject(AuthContext)
   private readonly _authContext: AuthContext;
+
+  @Inject()
+  private readonly _prismaService: PrismaService;
 
   private readonly algorithm = 'aes-256-cbc';
   private readonly key = Buffer.from(process.env.ENCRYPTION_KEY!, 'hex');
@@ -40,7 +40,31 @@ export class AuthService {
     email: string,
     password: string,
   ): Promise<Omit<User, 'actions'> | null> {
-    const found = await this._usersService.getUserByEmail(email);
+    const found = await this._prismaService.user.findUnique({
+      where: { email },
+      include: {
+        organizations: {
+          include: {
+            organization: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        teams: {
+          include: {
+            team: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
 
     if (!found) {
       return null;
@@ -89,7 +113,31 @@ export class AuthService {
   public async setAuthContextFromTokenPayloadAsync(
     payload: TokenPayload,
   ): Promise<boolean> {
-    const user = await this._usersService.getUserById(payload.sub);
+    const user = await this._prismaService.user.findUnique({
+      where: { id: payload.sub },
+      include: {
+        organizations: {
+          include: {
+            organization: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        teams: {
+          include: {
+            team: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
 
     if (!user) {
       return false;
@@ -137,7 +185,31 @@ export class AuthService {
       return null;
     }
 
-    const user = await this._usersService.getUserById(payload.sub);
+    const user = await this._prismaService.user.findUnique({
+      where: { id: payload.sub },
+      include: {
+        organizations: {
+          include: {
+            organization: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        teams: {
+          include: {
+            team: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
 
     if (!user) {
       return null;
@@ -160,7 +232,31 @@ export class AuthService {
       return undefined;
     }
 
-    const user = await this._usersService.getUserById(payload.sub);
+    const user = await this._prismaService.user.findUnique({
+      where: { id: payload.sub },
+      include: {
+        organizations: {
+          include: {
+            organization: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        teams: {
+          include: {
+            team: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
 
     if (!user) {
       return undefined;

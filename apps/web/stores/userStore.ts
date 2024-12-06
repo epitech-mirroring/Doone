@@ -73,7 +73,7 @@ export const useUserStore = defineStore('user', () => {
     });
 
     if (!response.ok) {
-      return response.json();
+      return await response.json();
     }
 
     const data = await response.json();
@@ -83,6 +83,24 @@ export const useUserStore = defineStore('user', () => {
     }
 
     setTokens(data);
+  }
+
+  async function verify(code: number): Promise<undefined | {
+    error: string
+    message: string
+    statusCode: number
+  }> {
+    const config = useRuntimeConfig();
+    const endpoint = config.public['apiBaseUrl'] + '/users/verify';
+    const response = await authFetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ verificationCode: code }),
+    });
+
+    if (!response.ok) {
+      return response.json();
+    }
   }
 
   async function refresh(): Promise<void> {
@@ -179,6 +197,7 @@ export const useUserStore = defineStore('user', () => {
     updateMe,
     fetch: authFetch,
     register,
+    verify,
   }
 }, {
   persist: true,

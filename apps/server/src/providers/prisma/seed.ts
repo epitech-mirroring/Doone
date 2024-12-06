@@ -8,9 +8,6 @@ const resourcesService = new ResourcesService(prisma);
 const _permissionsService = new PermissionsService(prisma, resourcesService);
 
 async function main() {
-  // Delete all existing policies
-  await prisma.policy.deleteMany();
-
   // Admin
   const globalAdminPolicy = await _permissionsService.createPolicy(`Admin`);
 
@@ -73,7 +70,9 @@ async function main() {
     globalUserPolicy,
     'read',
     User,
-    (user, targetUser) => user.id === targetUser.id,
+    (user, targetUser) => {
+      return user.id === targetUser.id;
+    },
     'allow',
   );
 

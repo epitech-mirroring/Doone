@@ -65,9 +65,6 @@ export class TeamsService {
           },
         },
         users: {
-          select: {
-            role: true,
-          },
           include: {
             user: {
               select: {
@@ -105,9 +102,6 @@ export class TeamsService {
           },
         },
         users: {
-          select: {
-            role: true,
-          },
           include: {
             user: {
               select: {
@@ -176,9 +170,6 @@ export class TeamsService {
           },
         },
         users: {
-          select: {
-            role: true,
-          },
           include: {
             user: {
               select: {

@@ -225,7 +225,7 @@ export class UsersService {
     }
 
     if (verificationRequest.expires < new Date()) {
-      this._prismaService.verificationRequest.delete({
+      await this._prismaService.verificationRequest.delete({
         where: {
           userId: user.id,
         },
@@ -240,7 +240,7 @@ export class UsersService {
       },
     });
 
-    this._prismaService.verificationRequest.delete({
+    await this._prismaService.verificationRequest.delete({
       where: {
         userId: user.id,
       },

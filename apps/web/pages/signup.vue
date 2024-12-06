@@ -20,7 +20,7 @@ const steps: {
   description: string;
   altDescription: string;
   icon: string;
-  onSubmit?: (values: never) => void;
+  onSubmit?: (values: never) => Promise<undefined | { error: string, field: string }>;
 }[] = [
   {
     step: 1,
@@ -29,8 +29,16 @@ const steps: {
     description: 'Provide your email and password',
     altDescription: 'Fill in the fields and create your account',
     icon: 'fa-user',
-    onSubmit: (values: { email: string; firstName: string; lastName: string; password: string }) => {
-      user.register(values.email, values.password, values.firstName + " " + values.lastName.toUpperCase());
+    onSubmit: async (values: {
+      email: string;
+      firstName: string;
+      lastName: string;
+      password: string
+    }) => {
+      const r = await user.register(values.email, values.password, values.firstName + " " + values.lastName.toUpperCase());
+      if (r?.error) {
+        return { error: r.message, field: 'email' };
+      }
     },
   },
   {
@@ -40,6 +48,12 @@ const steps: {
     description: 'Check your mails and enter your verification code',
     altDescription: 'Check your email and enter the verification code',
     icon: 'fa-envelope',
+    onSubmit: async (values: { verificationCode: string[] }) => {
+      const r = await user.verify(Number(values.verificationCode.join('')));
+      if (r?.error) {
+        return { error: r.message, field: 'verificationCode' };
+      }
+    },
   },
   {
     step: 3,
@@ -110,9 +124,11 @@ const formSchema = [
   z.object({}),
 ];
 
-const onSubmit = (values: Record<string, unknown>) => {
-  console.log(values);
-  steps[currentStep.value - 2].onSubmit?.(values as never);
+const onSubmit = async (values: Record<string, unknown>): Promise<undefined | {
+  error: string,
+  field: string,
+}> => {
+  return steps[currentStep.value - 1]?.onSubmit?.(values as never);
 };
 
 const getPasswordStrength = (
@@ -159,7 +175,7 @@ onMounted(() => {
 
 <template>
   <Form
-    v-slot="{ meta, values, validate, setFieldValue }"
+    v-slot="{ meta, values, validate, setFieldValue, setFieldError }"
     as=""
     keep-values
     :validation-schema="toTypedSchema(formSchema[currentStep - 1])"
@@ -176,16 +192,6 @@ onMounted(() => {
           </div>
           <form
             id="stepper"
-            @submit="
-              (e) => {
-                e.preventDefault();
-                validate();
-
-                if (meta.valid) {
-                  onSubmit(values);
-                }
-              }
-            "
           >
             <StepperItem
               v-for="step in steps"
@@ -382,6 +388,7 @@ onMounted(() => {
                       </PinInputGroup>
                     </PinInput>
                   </FormControl>
+                  <FormMessage />
                   <FormDescription class="w-full transform -translate-x-10">
                     <span class="text-gray-400"
                       >You didn’t received the email?</span
@@ -531,17 +538,23 @@ onMounted(() => {
               </FormField>
             </template>
             <Button
-              :type="meta.valid ? 'button' : 'submit'"
+              type="submit"
               size="lg"
               class="font-climate-crisis text-lg tracking-wide w-full"
               @click="
-                () => {
-                  if (meta.valid) {
+              async (e) => {
+                e.preventDefault();
+                await validate();
+
+                if (meta.valid) {
+                  const r = await onSubmit(values);
+                  if (r?.error) {
+                    setFieldError(r.field, r.error);
+                  } else {
                     nextStep();
-                    onSubmit(values);
                   }
                 }
-              "
+              }"
             >
               {{ currentStep === steps.length ? 'Finish' : 'Continue' }}
             </Button>

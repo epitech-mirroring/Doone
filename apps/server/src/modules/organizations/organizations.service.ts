@@ -26,9 +26,6 @@ export class OrganizationsService {
           },
         },
         users: {
-          select: {
-            role: true,
-          },
           include: {
             user: {
               select: {
@@ -60,9 +57,6 @@ export class OrganizationsService {
           },
         },
         users: {
-          select: {
-            role: true,
-          },
           include: {
             user: {
               select: {
@@ -109,9 +103,6 @@ export class OrganizationsService {
           },
         },
         users: {
-          select: {
-            role: true,
-          },
           include: {
             user: {
               select: {

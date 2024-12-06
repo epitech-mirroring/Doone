@@ -2,7 +2,6 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { execSync } from 'node:child_process';
 
 const isOpenApiEnable = (argv: string[]): boolean => {
   for (const arg of argv) {
@@ -14,16 +13,31 @@ const isOpenApiEnable = (argv: string[]): boolean => {
 };
 
 async function runPrismaMigrations() {
-  console.log(execSync('bunx prisma db push').toString());
-  // Check if seed is ending in js or ts
-  if (execSync('ls ./providers/prisma/seed.*').toString().includes('seed.ts')) {
-    console.log(execSync('bun run ./providers/prisma/seed.ts').toString());
-  } else {
-    console.log(execSync('bun run ./providers/prisma/seed.js').toString());
-  }
+  console.log(
+    Bun.spawnSync(['bunx', 'prisma', 'db', 'push']).stdout.toString(),
+  );
+  Bun.spawnSync([
+    'find',
+    '.',
+    '-name',
+    'seed.ts',
+    '-exec',
+    'node',
+    '{}',
+    '||',
+    'find',
+    '.',
+    '-name',
+    'seed.js',
+    '-exec',
+    'node',
+    '{}',
+    ';',
+  ]).stdout.toString();
 }
 
 async function main() {
+  await runPrismaMigrations();
   const app = await NestFactory.create(AppModule, { cors: true });
 
   if (isOpenApiEnable(process.argv)) {
@@ -40,8 +54,6 @@ async function main() {
 
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   app.setGlobalPrefix('api');
-
-  await runPrismaMigrations();
   await app.listen(4040);
 }
 

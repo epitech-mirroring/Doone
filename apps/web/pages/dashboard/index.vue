@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { useUserStore } from "~/stores/userStore";
-import DooneLogo from "~/components/DooneLogo.vue";
+import { useUserStore } from '~/stores/userStore';
+import DooneLogo from '~/components/DooneLogo.vue';
 import {
   DropdownMenu,
-  DropdownMenuShortcut
-} from "~/components/ui/dropdown-menu";
+  DropdownMenuShortcut,
+} from '~/components/ui/dropdown-menu';
 import {
   Command,
   CommandEmpty,
@@ -12,12 +12,12 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator
-} from "~/components/ui/command";
-import { Popover } from "~/components/ui/popover";
-import { cn } from "~/lib/utils";
-import { DialogFooter, DialogHeader } from "~/components/ui/dialog";
-import type { SmallTeam } from "~/stores/organizationStore";
+  CommandSeparator,
+} from '~/components/ui/command';
+import { Popover } from '~/components/ui/popover';
+import { cn } from '~/lib/utils';
+import { DialogFooter, DialogHeader } from '~/components/ui/dialog';
+import type { SmallTeam } from '~/stores/organizationStore';
 
 const user = useUserStore();
 const organizationStore = useOrganizationStore();
@@ -88,19 +88,25 @@ onMounted(() => {
                 :aria-expanded="organizationOpen"
                 aria-label="Select organization"
                 :class="cn('w-[200px] justify-between', $attrs.class ?? '')"
+                :disabled="organizationStore.organizations.length === 0"
               >
-                <Avatar class="mr-2 h-5 w-5">
-                  <AvatarImage
-                    :src="`https://avatar.vercel.sh/${organizationStore.selectedTeam?.name}.png`"
-                    :alt="organizationStore.selectedTeam?.name"
-                  />
-                </Avatar>
-                {{ organizationStore.selectedTeam?.name }}
+                <template v-if="organizationStore.organizations.length > 0">
+                  <Avatar class="mr-2 h-5 w-5">
+                    <AvatarImage
+                      :src="`https://avatar.vercel.sh/${organizationStore.selectedTeam?.name}.png`"
+                      :alt="organizationStore.selectedTeam?.name"
+                    />
+                  </Avatar>
+                  {{ organizationStore.selectedTeam?.name }}
+                </template>
+                <template v-else>
+                  <span class="text-gray-400">No Organization</span>
+                </template>
                 <i class="ml-auto h-4 w-4 shrink-0 opacity-50 fas fa-sort"/>
               </Button>
             </PopoverTrigger>
             <PopoverContent class="w-[200px] p-0">
-              <Command :filter-function="(list, term) => list.filter(i => (i as SmallTeam).name?.toLowerCase()?.includes(term)) ">
+              <Command :filter-function="(list, term) => list.filter(i => (i as SmallTeam).name?.toLowerCase()?.includes(term)) as SmallTeam[]">
                 <CommandList>
                   <CommandInput placeholder="Search team..." />
                   <CommandEmpty>No team found.</CommandEmpty>
@@ -172,18 +178,23 @@ onMounted(() => {
                         aria-label="Select organization"
                         class="w-full"
                       >
-                        <Avatar class="mr-2 h-5 w-5">
-                          <AvatarImage
-                            :src="`https://avatar.vercel.sh/${selectedOrganization?.name}.png`"
-                            :alt="selectedOrganization?.name"
-                          />
-                        </Avatar>
-                        {{ selectedOrganization?.name }}
-                        <i class="ml-auto h-4 w-4 shrink-0 opacity-50 fas fa-sort"/>
+                        <template v-if="organizationStore.organizations.length > 0">
+                          <Avatar class="mr-2 h-5 w-5">
+                            <AvatarImage
+                              :src="`https://avatar.vercel.sh/${selectedOrganization?.name}.png`"
+                              :alt="selectedOrganization?.name"
+                            />
+                          </Avatar>
+                          {{ selectedOrganization?.name }}
+                          <i class="ml-auto h-4 w-4 shrink-0 opacity-50 fas fa-sort"/>
+                        </template>
+                        <template v-else>
+                          <span class="text-gray-400">No Organization</span>
+                        </template>
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent class="w-[200px] p-0">
-                      <Command :filter-function="(list, term) => list.filter(i => (i as Organization).name?.toLowerCase()?.includes(term)) ">
+                      <Command :filter-function="(list, term) => list.filter(i => (i as Organization).name?.toLowerCase()?.includes(term)) as Organization[]">
                         <CommandList>
                           <CommandInput placeholder="Search organization..." />
                           <CommandEmpty>No organization found.</CommandEmpty>
