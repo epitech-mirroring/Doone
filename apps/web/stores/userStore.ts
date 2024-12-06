@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import posthog from 'posthog-js';
 
 export interface User {
   id: string;
@@ -157,6 +158,10 @@ export const useUserStore = defineStore('user', () => {
         return response.json();
       })
       .then((data) => {
+        posthog.identify(data.id, {
+          email: data.email,
+          name: data.name,
+        });
         _me.value = data;
       })
       .catch(() => {
