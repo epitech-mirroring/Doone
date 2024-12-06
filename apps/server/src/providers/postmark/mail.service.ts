@@ -14,7 +14,7 @@ export class MailService {
     body: string,
   ): Promise<Models.MessageSendingResponse> {
     const mail: Models.Message = {
-      From: 'no-reply@codeweave.fr',
+      From: 'no-reply@doone.it',
       To: to,
       Subject: subject,
       TextBody: body,
@@ -29,7 +29,7 @@ export class MailService {
     templateData: T['templateData'],
   ): Promise<Models.MessageSendingResponse> {
     const mail: Models.TemplatedMessage = {
-      From: 'no-reply@codeweave.fr',
+      From: 'no-reply@doone.it',
       To: to,
       TemplateId: templateType.templateId,
       TemplateModel: templateData,
