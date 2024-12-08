@@ -2,10 +2,17 @@
 import DooneLogo from '~/components/DooneLogo.vue';
 
 const router = useRouter();
+const userStore = useUserStore();
 
 useSeoMeta({
   title: "Doone",
   description: "You can finally move your project from in progress to Doone",
+});
+
+onMounted(() => {
+  if (userStore.getMe === null && userStore.isLoggedIn) { // WARNING: This will probably break the dashboard showing no organization
+    userStore.updateMe();
+  }
 });
 </script>
 
@@ -16,13 +23,27 @@ useSeoMeta({
         <DooneLogo />
       </div>
       <div id="right">
-        <div id="auth">
+        <div v-if="!userStore.isLoggedIn" id="auth">
           <div id="login" class="button" @click="router.push('/login')">
             Login
           </div>
           <div id="signup" class="button" @click="router.push('/signup')">
             Sign up
           </div>
+        </div>
+        <div v-else id="auth" class="space-x-2">
+          <Button variant="link" @click="router.push('/dashboard')">
+            <Avatar class="h-8 w-8">
+              <AvatarImage :src="'https://api.dicebear.com/9.x/notionists/svg?scale=150&translateY=10&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&seed=' + userStore.getMe?.id" />
+              <AvatarFallback :delay-ms="1000">
+                {{ userStore.getMe?.name[0] }}
+                {{ userStore.getMe?.name[1] }}
+              </AvatarFallback>
+            </Avatar>
+          </Button>
+          <Button variant="ghost" @click="userStore.logout()">
+            <i class="fas fa-sign-out-alt"/>
+          </Button>
         </div>
       </div>
     </nav>
