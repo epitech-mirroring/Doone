@@ -13,7 +13,7 @@ export type Organization = {
 
 export const useOrganizationStore = defineStore('organization', () => {
   const organizations = ref<Organization[]>([]);
-  const selectedTeam = ref<SmallTeam | null>(null);
+  const selectedOrganization = ref<Organization | null>(null);
 
   async function fetchOrganizations() {
     const config = useRuntimeConfig();
@@ -29,17 +29,19 @@ export const useOrganizationStore = defineStore('organization', () => {
 
     organizations.value = await response.json();
 
-    selectedTeam.value = organizations.value[0]?.teams[0] ?? null;
+    if (organizations.value.length > 0) {
+      selectedOrganization.value = organizations.value[0];
+    }
   }
 
-  function selectTeam(team: SmallTeam) {
-    selectedTeam.value = team;
+  function selectOrganization(organization: Organization) {
+    selectedOrganization.value = organization;
   }
 
   return {
     organizations,
-    selectedTeam,
+    selectedOrganization,
     fetchOrganizations,
-    selectTeam,
+    selectOrganization
   };
 });
