@@ -16,45 +16,45 @@ module.exports = {
     },
     extend: {
       colors: {
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
+        border: 'hsl(240 5.9% 90%)',
+        input: 'hsl(240 5.9% 90%)',
+        ring: 'hsl(240 10% 3.9%)',
+        background: 'hsl(0 0% 100%)',
+        foreground: 'hsl(240 10% 3.9%)',
         primary: {
-          DEFAULT: 'var(--primary)',
-          foreground: 'var(--primary-foreground)',
+          DEFAULT: '#9C82F7',
+          foreground: '#FFF',
         },
         secondary: {
-          DEFAULT: 'var(--secondary)',
-          foreground: 'var(--secondary-foreground)',
+          DEFAULT: '#55DBCB',
+          foreground: 'hsl(240 5.9% 10%)',
         },
         destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
+          DEFAULT: 'hsl(0 84.2% 60.2%)',
+          foreground: 'hsl(0 0% 98%)',
         },
         muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
+          DEFAULT: 'hsl(240 4.8% 95.9%)',
+          foreground: 'hsl(240 3.8% 46.1%)',
         },
         accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
+          DEFAULT: 'hsl(240 4.8% 95.9%)',
+          foreground: 'hsl(240 5.9% 10%)',
         },
         popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
+          DEFAULT: 'hsl(0 0% 100%)',
+          foreground: 'hsl(240 10% 3.9%)',
         },
         card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
+          DEFAULT: 'hsl(0 0% 100%)',
+          foreground: 'hsl(240 10% 3.9%)',
         },
       },
       borderRadius: {
-        xl: 'calc(var(--radius) + 4px)',
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        xl: 'calc(0.5rem + 4px)',
+        lg: '0.5rem',
+        md: 'calc(0.5rem - 2px)',
+        sm: 'calc(0.5rem - 4px)',
       },
       keyframes: {
         'accordion-down': {
