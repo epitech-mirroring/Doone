@@ -1,5 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { IdOf, Organization, User } from '../../types';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { IdOf, Organization, Team, User } from '../../types';
 import { PrismaService } from '../../providers/prisma';
 import { AuthContext } from '../auth/auth.context';
 import { PermissionsService } from '../permissions/permissions.service';
@@ -61,6 +61,7 @@ export class OrganizationsService {
             user: {
               select: {
                 id: true,
+                name: true,
               },
             },
           },
@@ -74,11 +75,13 @@ export class OrganizationsService {
     });
   }
 
-  //TODO: Secure this method
   async getOrganizationsForUser(
     userId: IdOf<User>,
   ): Promise<Omit<Organization, 'actions'>[]> {
-    return this._prismaService.organization.findMany({
+    if (!this._authContext.authenticated)
+      throw new UnauthorizedException('User not authenticated');
+
+    const organizations = await this._prismaService.organization.findMany({
       where: {
         users: {
           some: {
@@ -94,19 +97,13 @@ export class OrganizationsService {
             id: true,
             name: true,
           },
-          where: {
-            users: {
-              some: {
-                id: userId,
-              },
-            },
-          },
         },
         users: {
           include: {
             user: {
               select: {
                 id: true,
+                name: true,
               },
             },
           },
@@ -118,6 +115,83 @@ export class OrganizationsService {
         },
       },
     });
+
+    const finalOrganizations: any[] = [];
+
+    for (const organization of organizations) {
+      if (
+        !(await this._permissionsService.canUserPerformAction<Organization>(
+          this._authContext.user,
+          'read',
+          organization.id,
+          Organization,
+        ))
+      ) {
+        if (
+          await this._permissionsService.canUserPerformAction<Organization>(
+            this._authContext.user,
+            'list',
+            organization.id,
+            Organization,
+          )
+        ) {
+          finalOrganizations.push({
+            id: organization.id,
+            name: organization.name,
+          });
+        }
+      } else {
+        const finalTeams: any[] = [];
+        const finalUsers: any[] = [];
+
+        for (const team of organization.teams) {
+          if (
+            await this._permissionsService.canUserPerformAction<Team>(
+              this._authContext.user,
+              'list',
+              team.id,
+              Team,
+            )
+          ) {
+            finalTeams.push({
+              id: team.id,
+              name: team.name,
+            });
+          }
+        }
+
+        for (const user of organization.users) {
+          if (
+            await this._permissionsService.canUserPerformAction<User>(
+              this._authContext.user,
+              'list',
+              user.user.id,
+              User,
+            )
+          ) {
+            finalUsers.push({
+              id: user.user.id,
+              name: user.user.name,
+              role: user.role,
+            });
+          } else {
+            finalUsers.push({
+              id: 0,
+              name: 'Anonymous',
+              role: user.role,
+            });
+          }
+        }
+
+        finalOrganizations.push({
+          ...organization,
+          teams: finalTeams,
+          users: finalUsers,
+        });
+      }
+    }
+
+    return finalOrganizations;
   }
 
   async createOrganization(
