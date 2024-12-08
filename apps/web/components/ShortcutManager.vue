@@ -15,6 +15,7 @@ const modifiersDown = ref<Record<Modifier, boolean>>({
 });
 
 const user = useUserStore();
+const router = useRouter();
 
 const reset = () => {
   keyDown.value = [];
@@ -34,23 +35,55 @@ const shortcuts: Shortcut[] = [
       if (user.isLoggedIn)
         user.logout();
     },
+  },
+  {
+    keys: ['s'],
+    modifiers: ['meta'],
+    handler: () => {
+      if (user.isLoggedIn) {
+        router.push('/dashboard/settings');
+      }
+    },
+  },
+  {
+    keys: ['b'],
+    modifiers: ['meta'],
+    handler: () => {
+      if (user.isLoggedIn) {
+        router.push('/dashboard/billing');
+      }
+    },
+  },
+  {
+    keys: ['p'],
+    modifiers: ['meta', 'shift'],
+    handler: () => {
+      if (user.isLoggedIn) {
+        router.push('/dashboard/profile');
+      }
+    },
   }
 ];
 
 const processShortcuts = (e: KeyboardEvent) => {
-  for (const shortcut of shortcuts) {
+  outer: for (const shortcut of shortcuts) {
     for (const key of shortcut.keys) {
-      if (!keyDown.value.includes(key)) return;
-    }
-    if (shortcut.modifiers) {
-      for (const modifier of shortcut.modifiers) {
-        if (!modifiersDown.value[modifier]) return;
+      if (!keyDown.value.includes(key.toLowerCase())) {
+        continue outer;
       }
     }
+    for (const modifier of shortcut.modifiers || []) {
+      if (!modifiersDown.value[modifier]) {
+        continue outer;
+      }
+    }
+    e.preventDefault();
+    e.stopPropagation();
     shortcut.handler();
     reset();
-    e.preventDefault();
+    return;
   }
+  reset();
 };
 
 onMounted(() => {
