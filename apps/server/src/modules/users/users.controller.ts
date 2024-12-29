@@ -6,6 +6,7 @@ import {
   Get,
   Inject,
   InternalServerErrorException,
+  Patch,
   Post,
 } from '@nestjs/common';
 import { Public } from '../auth/decorators/public.decorator';
@@ -14,7 +15,6 @@ import { UsersService } from './users.service';
 import { AuthService } from '../auth/auth.service';
 import { Private } from '../auth/decorators/private.decorator';
 import { AuthContext } from '../auth/auth.context';
-import { User } from '../../types';
 import { OrganizationsService } from '../organizations/organizations.service';
 
 @Controller('users')
@@ -51,7 +51,7 @@ export class UsersController {
     const refreshToken = await this._authService.generateRefreshToken(user);
     this._authContext.user = user;
 
-    await this._usersService.sendVerificationEmail();
+    await this._usersService.sendVerificationEmail(this._authContext.user);
 
     return { accessToken, refreshToken };
   }
@@ -59,20 +59,23 @@ export class UsersController {
   @Private()
   @Get('me')
   async me() {
-    const user: Partial<User> | null = await this._usersService.getUserById(
+    const user = await this._usersService.getUserById(
       this._authContext.user.id,
+      this._authContext.user,
     );
     if (!user) {
       throw new InternalServerErrorException('User could not be found');
     }
-    delete user.password;
     return user;
   }
 
   @Private()
-  @Post('verify')
+  @Patch('verify')
   async verify(@Body() body: VerifyEmailDTO): Promise<void> {
-    const user = await this._usersService.verifyEmail(body.verificationCode);
+    const user = await this._usersService.verifyEmail(
+      body.verificationCode,
+      this._authContext.user,
+    );
     if (!user) {
       throw new InternalServerErrorException('User could not be verified');
     }

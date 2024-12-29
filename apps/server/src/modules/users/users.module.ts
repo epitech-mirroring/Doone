@@ -6,6 +6,7 @@ import { AuthModule } from '../auth/auth.module';
 import { PermissionsModule } from '../permissions/permissions.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { PostmarkModule } from '../../providers/postmark/postmark.module';
+import { TeamsModule } from '../teams/teams.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { PostmarkModule } from '../../providers/postmark/postmark.module';
     forwardRef(() => AuthModule),
     PermissionsModule,
     forwardRef(() => OrganizationsModule),
+    forwardRef(() => TeamsModule),
     PostmarkModule,
   ],
   controllers: [UsersController],

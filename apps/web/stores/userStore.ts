@@ -1,18 +1,31 @@
 import { defineStore } from 'pinia';
 import posthog from 'posthog-js';
+import type {
+  FullOrganization,
+  FullTeam,
+  ListOrganization,
+  ListTeam,
+} from '~/stores/organizationStore';
 
-export interface User {
+export type FullUser = {
+  id: string;
+  email: string;
+  name: string;
+  organizations: (FullOrganization | ListOrganization | null)[];
+  teams: (FullTeam | ListTeam | null)[];
+  emailVerified: boolean;
+};
+
+export type ListUser = {
   id: string;
   name: string;
-  email: string;
-  emailVerified: boolean;
-}
+};
 
 export const useUserStore = defineStore('user', () => {
 
   const _accessToken = ref<string | null>(null);
   const _refreshToken = ref<string | null>(null);
-  const _me = ref<User | null>(null);
+  const me = ref<FullUser | null>(null);
   const _rememberMe = ref<boolean>(false);
 
   const getAccessTokenContent = computed(() => {
@@ -32,7 +45,7 @@ export const useUserStore = defineStore('user', () => {
   function setTokens(tokens: Partial<{ accessToken: string; refreshToken: string }>) {
     if (tokens.accessToken) {
       _accessToken.value = tokens.accessToken;
-      _me.value = null;
+      me.value = null;
     }
     if (tokens.refreshToken) {
       _refreshToken.value = tokens.refreshToken;
@@ -95,7 +108,7 @@ export const useUserStore = defineStore('user', () => {
     const config = useRuntimeConfig();
     const endpoint = config.public['apiBaseUrl'] + '/users/verify';
     const response = await authFetch(endpoint, {
-      method: 'POST',
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ verificationCode: code }),
     });
@@ -141,7 +154,7 @@ export const useUserStore = defineStore('user', () => {
 
   async function updateMe() {
     if (!isLoggedIn.value) {
-      _me.value = null;
+      me.value = null;
       return;
     }
 
@@ -163,15 +176,13 @@ export const useUserStore = defineStore('user', () => {
           email: data.email,
           name: data.name,
         });
-        _me.value = data;
+        me.value = data;
       })
       .catch(() => {
-        _me.value = null;
+        me.value = null;
       });
   }
-
-  const getMe = computed(() => _me.value);
-
+  
   function setRememberMe(value: boolean) {
     _rememberMe.value = value;
   }
@@ -198,7 +209,7 @@ export const useUserStore = defineStore('user', () => {
     login,
     logout,
     refresh,
-    getMe,
+    me,
     setRememberMe,
     updateMe,
     fetch: authFetch,

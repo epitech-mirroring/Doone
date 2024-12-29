@@ -1,4 +1,12 @@
-import { IdOf, Organization, PrismaTableName, Resource, User } from '../index';
+import {
+  IdOf,
+  ListOrganization,
+  ListUser,
+  Organization,
+  PrismaTableName,
+  Resource,
+  User,
+} from '../index';
 import { Role } from '@prisma/client';
 
 export class Team extends Resource {
@@ -32,3 +40,16 @@ export class Team extends Resource {
     | 'promoteUser'
     | 'demoteUser';
 }
+
+export type FullTeam = {
+  id: string;
+  name: string;
+  organization: ListOrganization | null;
+  users: (ListUser | null)[];
+  owner: ListUser | null;
+};
+
+export type ListTeam = {
+  id: string;
+  name: string;
+};

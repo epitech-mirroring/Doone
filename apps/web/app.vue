@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ShortcutManager from '~/components/ShortcutManager.vue';
+  import ShortcutManager from '~/components/ShortcutManager.vue';
 </script>
 
 <template>

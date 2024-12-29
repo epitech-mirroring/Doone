@@ -12,32 +12,7 @@ const isOpenApiEnable = (argv: string[]): boolean => {
   return false;
 };
 
-async function runPrismaMigrations() {
-  console.log(
-    Bun.spawnSync(['bunx', 'prisma', 'db', 'push']).stdout.toString(),
-  );
-  Bun.spawnSync([
-    'find',
-    '.',
-    '-name',
-    'seed.ts',
-    '-exec',
-    'node',
-    '{}',
-    '||',
-    'find',
-    '.',
-    '-name',
-    'seed.js',
-    '-exec',
-    'node',
-    '{}',
-    ';',
-  ]).stdout.toString();
-}
-
 async function main() {
-  await runPrismaMigrations();
   const app = await NestFactory.create(AppModule, { cors: true });
 
   if (isOpenApiEnable(process.argv)) {

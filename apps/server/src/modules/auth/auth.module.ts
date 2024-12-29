@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { AuthContext } from './auth.context';
 import { AuthController } from './auth.controller';
 import { PrismaModule } from '../../providers/prisma';
+import { RequestScopeModule } from 'nj-request-scope';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { PrismaModule } from '../../providers/prisma';
       signOptions: { expiresIn: '2h' },
     }),
     PrismaModule,
+    RequestScopeModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, AuthContext],

@@ -4,7 +4,7 @@ export type Effect = 'allow' | 'deny';
 
 export type Condition<T extends Resource> = (
   user: Omit<User, 'actions'>,
-  resource: T,
+  resource: T | null,
   ctx?: any,
 ) => boolean;
 

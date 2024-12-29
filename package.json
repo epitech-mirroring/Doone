@@ -3,10 +3,15 @@
   "private": true,
   "scripts": {
     "dev:server": "cd apps/server && infisical run --env dev --path=\"/server\" --recursive -- bun run start:dev",
-    "dev:web": "cd apps/web && infisical run --env dev --path=\"/web\" --recursive -- bun run dev",
+    "dev:web": "cd apps/web && infisical run --env dev --path=\"/web\" --recursive -- bun run dev -- --verbose",
     "dev": "concurrently --kill-others -p \"[{name}]\" -n \"Server,Web\" -c \"yellow.bold,cyan.bold\" \"bun run dev:server\" \"bun run dev:web\""
   },
   "devDependencies": {
     "concurrently": "^6.2.2"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1692.0",
+    "mock-aws-s3": "^4.0.2",
+    "nock": "^13.5.6"
   }
 }

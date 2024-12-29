@@ -33,7 +33,7 @@ const router = useRouter();
         </div>
       </div>
     </template>
-    <div class="h-fit w-fit pl-32 pt-14 flex flex-col justify-start">
+      <div class="h-fit w-fit pl-32 pt-14 flex flex-col justify-start">
       <div class="left-section">
         <div class="left-item" :class="route.name === 'dashboard' ? 'active' : ''">
           <i class="fas fa-home fa-fw"/>
@@ -51,14 +51,11 @@ const router = useRouter();
       <Separator/>
       <div class="left-section">
         <span class="left-section-title">Teams</span>
-        <div v-for="team in organizationStore.selectedOrganization?.teams" :key="team.id" class="left-item">
+        <div v-for="team in organizationStore.selectedOrganization?.teams" :key="team?.id" class="left-item">
           <Avatar class="mr-2 h-5 w-5" shape="square">
-            <AvatarImage
-              :src="`https://avatar.vercel.sh/${team.name}.png`"
-              :alt="team.name"
-            />
+            <GradientImage :seed="team?.id"/>
           </Avatar>
-          <span>{{ team.name }}</span>
+          <span>{{ team?.name }}</span>
         </div>
         <div class="left-action">
           <i class="fas fa-plus"/>

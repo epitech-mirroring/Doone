@@ -1,22 +1,26 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../../providers/prisma';
-import { IdOf, User } from '../../types';
+import { FullUser, IdOf, ListUser, User } from '../../types';
 import { AuthService } from '../auth/auth.service';
-import { AuthContext } from '../auth/auth.context';
 import { PermissionsService } from '../permissions/permissions.service';
 import { MailService } from '../../providers/postmark/mail.service';
 import { VerificationEmail } from '../../types/auth/mail.type';
+import { TeamsService } from '../teams/teams.service';
+import { OrganizationsService } from '../organizations/organizations.service';
 
 @Injectable()
-export class UsersService {
+export class UsersService implements OnModuleInit {
   @Inject(PrismaService)
   private _prismaService: PrismaService;
 
   @Inject(forwardRef(() => AuthService))
   private _authService: AuthService;
 
-  @Inject()
-  private _authContext: AuthContext;
+  @Inject(forwardRef(() => TeamsService))
+  private _teamsService: TeamsService;
+
+  @Inject(forwardRef(() => OrganizationsService))
+  private _organizationsService: OrganizationsService;
 
   @Inject()
   private _permissionsService: PermissionsService;
@@ -24,14 +28,79 @@ export class UsersService {
   @Inject()
   private _mailService: MailService;
 
-  async getUserById(id: IdOf<User>): Promise<Omit<User, 'actions'> | null> {
-    if (!this._authContext.authenticated) {
-      return null;
-    }
+  async onModuleInit(): Promise<void> {
+    const globalUserPolicy =
+      await this._permissionsService.createPolicy('User');
 
+    await this._permissionsService.addRuleToPolicy<User>(
+      globalUserPolicy,
+      'read',
+      User,
+      (user, targetUser) => {
+        return user.id === targetUser?.id;
+      },
+      'allow',
+    );
+
+    await this._permissionsService.addRuleToPolicy<User>(
+      globalUserPolicy,
+      'update',
+      User,
+      (user, targetUser) => user.id === targetUser?.id,
+      'allow',
+    );
+
+    await this._permissionsService.addRuleToPolicy<User>(
+      globalUserPolicy,
+      'delete',
+      User,
+      (user, targetUser) => user.id === targetUser?.id,
+      'allow',
+    );
+
+    await this._permissionsService.addRuleToPolicy<User>(
+      globalUserPolicy,
+      'list',
+      User,
+      () => true,
+      'allow',
+    );
+
+    await this._permissionsService.addRuleToPolicy<User>(
+      globalUserPolicy,
+      'resetPassword',
+      User,
+      (user, targetUser) => user.id === targetUser?.id,
+      'allow',
+    );
+
+    const globalAdminPolicy =
+      await this._permissionsService.createPolicy(`Admin`);
+
+    await this._permissionsService.addRuleToPolicy<User>(
+      globalAdminPolicy,
+      'delete',
+      User,
+      () => true,
+      'allow',
+    );
+
+    await this._permissionsService.addRuleToPolicy<User>(
+      globalAdminPolicy,
+      'resetPassword',
+      User,
+      () => true,
+      'allow',
+    );
+  }
+
+  async getFullUserById(
+    id: IdOf<User>,
+    performer: Omit<User, 'actions'>,
+  ): Promise<FullUser | null> {
     if (
-      !(await this._permissionsService.canUserPerformAction(
-        this._authContext.user,
+      !(await this._permissionsService.canUserPerformAction<User>(
+        performer,
         'read',
         id,
         User,
@@ -40,38 +109,69 @@ export class UsersService {
       return null;
     }
 
-    return this._prismaService.user.findUnique({
+    const user = await this._prismaService.user.findUnique({
       where: { id },
-      include: {
-        organizations: {
-          include: {
-            organization: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-        teams: {
-          include: {
-            team: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-      },
     });
-  }
 
-  async getUserByEmail(email: string): Promise<Omit<User, 'actions'> | null> {
-    if (!this._authContext.authenticated) {
+    if (!user) {
       return null;
     }
 
+    const result: FullUser = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      emailVerified: user.emailVerified,
+      organizations: [],
+      teams: [],
+    };
+
+    result.teams = await this._teamsService.getTeamsForUser(id, performer);
+    result.organizations =
+      await this._organizationsService.getOrganizationsForUser(id, performer);
+
+    return result;
+  }
+
+  async getListsUserById(
+    id: IdOf<User>,
+    performer: Omit<User, 'actions'>,
+  ): Promise<ListUser | null> {
+    if (
+      !(await this._permissionsService.canUserPerformAction<User>(
+        performer,
+        'read',
+        id,
+        User,
+      ))
+    ) {
+      return null;
+    }
+
+    return (await this._prismaService.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+      },
+    })) as ListUser | null;
+  }
+
+  public async getUserById(
+    id: IdOf<User>,
+    performer: Omit<User, 'actions'>,
+  ): Promise<FullUser | ListUser | null> {
+    const fullUser = await this.getFullUserById(id, performer);
+    if (!fullUser) {
+      return this.getListsUserById(id, performer);
+    }
+    return fullUser;
+  }
+
+  async getUserByEmail(
+    email: string,
+    user: Omit<User, 'actions'>,
+  ): Promise<Omit<User, 'actions'> | null> {
     const userId = await this._prismaService.user.findUnique({
       where: { email },
       select: { id: true },
@@ -82,8 +182,8 @@ export class UsersService {
     }
 
     if (
-      !(await this._permissionsService.canUserPerformAction(
-        this._authContext.user,
+      !(await this._permissionsService.canUserPerformAction<User>(
+        user,
         'read',
         userId.id,
         User,
@@ -163,13 +263,7 @@ export class UsersService {
     });
   }
 
-  async sendVerificationEmail(): Promise<void> {
-    if (!this._authContext.authenticated) {
-      return;
-    }
-
-    const user = this._authContext.user;
-
+  async sendVerificationEmail(user: Omit<User, 'actions'>): Promise<void> {
     const verificationCode = this._authService.generateVerificationCode();
 
     await this._prismaService.verificationRequest.upsert({
@@ -202,13 +296,10 @@ export class UsersService {
     );
   }
 
-  async verifyEmail(code: number): Promise<boolean> {
-    if (!this._authContext.authenticated) {
-      return false;
-    }
-
-    const user = this._authContext.user;
-
+  async verifyEmail(
+    code: number,
+    user: Omit<User, 'actions'>,
+  ): Promise<boolean> {
     const verificationRequest =
       await this._prismaService.verificationRequest.findUnique({
         where: {

@@ -36,7 +36,7 @@ export class PermissionsService {
   async canUserPerformAction<T extends Resource>(
     user: Omit<User, 'actions'>,
     action: T['actions'],
-    resourceId: IdOf<T>,
+    resourceId: IdOf<T> | null,
     resourceType: ResourceType,
     ctx?: any,
   ): Promise<boolean> {
@@ -81,12 +81,11 @@ export class PermissionsService {
       })),
     }));
 
-    const resource = await this._resourcesService.getResource(
-      resourceId,
-      resourceType,
-    );
+    const resource = resourceId
+      ? await this._resourcesService.getResource(resourceId, resourceType)
+      : null;
 
-    if (resource === null) {
+    if (resource === null && resourceId !== null) {
       console.error("Resource doesn't exist");
       return false;
     }
@@ -119,6 +118,15 @@ export class PermissionsService {
   }
 
   async createPolicy(name: string): Promise<IdOf<Policy>> {
+    if (name === '') {
+      throw new Error('Policy name cannot be empty');
+    }
+    const existingPolicy = await this._prismaService.policy.findUnique({
+      where: { id: name },
+    });
+    if (existingPolicy) {
+      return existingPolicy.id;
+    }
     return (
       await this._prismaService.policy.create({
         data: {
@@ -139,7 +147,7 @@ export class PermissionsService {
     effect: Effect,
   ): Promise<IdOf<Rule<T>>> {
     const actionString = action.toString();
-    return (
+    const id = (
       await this._prismaService.rule.upsert({
         where: {
           action_resourceType_effect_policyId: {
@@ -168,6 +176,11 @@ export class PermissionsService {
         },
       })
     ).id;
+
+    if (!id) {
+      throw new Error('Failed to create rule');
+    }
+    return id;
   }
 
   async addPolicyToUser(

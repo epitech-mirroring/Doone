@@ -1,4 +1,11 @@
-import { PrismaTableName, Resource } from '../index';
+import {
+  FullOrganization,
+  FullTeam,
+  ListOrganization,
+  ListTeam,
+  PrismaTableName,
+  Resource,
+} from '../index';
 import { Role } from '@prisma/client';
 
 export class User extends Resource {
@@ -24,3 +31,17 @@ export class User extends Resource {
   }[];
   actions: 'read' | 'update' | 'delete' | 'list' | 'resetPassword';
 }
+
+export type FullUser = {
+  id: string;
+  email: string;
+  name: string;
+  organizations: (FullOrganization | ListOrganization | null)[];
+  teams: (FullTeam | ListTeam | null)[];
+  emailVerified: boolean;
+};
+
+export type ListUser = {
+  id: string;
+  name: string;
+};

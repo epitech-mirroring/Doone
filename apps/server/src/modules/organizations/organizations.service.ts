@@ -1,59 +1,218 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { IdOf, Organization, Team, User } from '../../types';
+import { forwardRef, Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import {
+  FullOrganization,
+  IdOf,
+  ListOrganization,
+  Organization,
+  User,
+} from '../../types';
 import { PrismaService } from '../../providers/prisma';
-import { AuthContext } from '../auth/auth.context';
 import { PermissionsService } from '../permissions/permissions.service';
+import { TeamsService } from '../teams/teams.service';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
-export class OrganizationsService {
+export class OrganizationsService implements OnModuleInit {
   @Inject()
   private _prismaService: PrismaService;
 
   @Inject()
-  private _authContext: AuthContext;
-
-  @Inject()
   private _permissionsService: PermissionsService;
 
-  //TODO: Secure this method
-  async getOrganizations(): Promise<Omit<Organization, 'actions'>[]> {
-    return this._prismaService.organization.findMany({
-      include: {
-        teams: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        users: {
-          include: {
-            user: {
-              select: {
-                id: true,
-              },
-            },
-          },
-        },
-        owner: {
-          select: {
-            id: true,
-          },
-        },
-      },
-    });
+  @Inject(forwardRef(() => TeamsService))
+  private _teamsService: TeamsService;
+
+  @Inject(forwardRef(() => UsersService))
+  private _usersService: UsersService;
+
+  async onModuleInit(): Promise<void> {
+    const globalUserPolicy =
+      await this._permissionsService.createPolicy('User');
+
+    await this._permissionsService.addRuleToPolicy<Organization>(
+      globalUserPolicy,
+      'read',
+      Organization,
+      (user, organization) =>
+        user.organizations.some(
+          (userOrganization) =>
+            userOrganization.organization.id === organization?.id,
+        ),
+      'allow',
+    );
+
+    await this._permissionsService.addRuleToPolicy<Organization>(
+      globalUserPolicy,
+      'list',
+      Organization,
+      // TODO: Add a rule to allow users to list organizations they are invited to
+      (user, organization) =>
+        user.organizations.some(
+          (userOrganization) =>
+            userOrganization.organization.id === organization?.id,
+        ),
+      'allow',
+    );
+
+    await this._permissionsService.addRuleToPolicy<Organization>(
+      globalUserPolicy,
+      'update',
+      Organization,
+      (user, organization) =>
+        user.organizations.some(
+          (userOrganization) =>
+            userOrganization.organization.id === organization?.id &&
+            userOrganization.role === 'ADMIN',
+        ),
+      'allow',
+    );
+
+    await this._permissionsService.addRuleToPolicy<Organization>(
+      globalUserPolicy,
+      'delete',
+      Organization,
+      (user, organization) => organization?.owner.id === user.id,
+      'allow',
+    );
+
+    await this._permissionsService.addRuleToPolicy<Organization>(
+      globalUserPolicy,
+      'addTeam',
+      Organization,
+      (user, organization) =>
+        user.organizations.some(
+          (userOrganization) =>
+            userOrganization.organization.id === organization?.id &&
+            userOrganization.role === 'ADMIN',
+        ),
+      'allow',
+    );
+
+    await this._permissionsService.addRuleToPolicy<Organization>(
+      globalUserPolicy,
+      'inviteUser',
+      Organization,
+      (user, organization) =>
+        user.organizations.some(
+          (userOrganization) =>
+            userOrganization.organization.id === organization?.id &&
+            userOrganization.role === 'ADMIN',
+        ),
+      'allow',
+    );
+
+    await this._permissionsService.addRuleToPolicy<Organization>(
+      globalUserPolicy,
+      'removeUser',
+      Organization,
+      (user, organization, ctx) =>
+        ctx.targetUser.id !== user.id &&
+        user.organizations.some(
+          (userOrganization) =>
+            userOrganization.organization.id === organization?.id &&
+            userOrganization.role === 'ADMIN',
+        ),
+      'allow',
+    );
+
+    await this._permissionsService.addRuleToPolicy<Organization>(
+      globalUserPolicy,
+      'transferOwnership',
+      Organization,
+      (user, organization) => organization?.owner.id === user.id,
+      'allow',
+    );
+
+    await this._permissionsService.addRuleToPolicy<Organization>(
+      globalUserPolicy,
+      'leave',
+      Organization,
+      (user, organization) =>
+        user.id !== organization?.owner.id &&
+        user.organizations.some(
+          (userOrganization) =>
+            userOrganization.organization.id === organization?.id &&
+            userOrganization.role === 'MEMBER',
+        ),
+      'allow',
+    );
+
+    await this._permissionsService.addRuleToPolicy<Organization>(
+      globalUserPolicy,
+      'promoteUser',
+      Organization,
+      (user, organization) =>
+        user.organizations.some(
+          (userOrganization) =>
+            userOrganization.organization.id === organization?.id &&
+            userOrganization.role === 'ADMIN',
+        ),
+      'allow',
+    );
+
+    await this._permissionsService.addRuleToPolicy<Organization>(
+      globalUserPolicy,
+      'demoteUser',
+      Organization,
+      (user, organization, ctx) =>
+        ctx.targetUser.id !== organization?.owner.id &&
+        user.organizations.some(
+          (userOrganization) =>
+            userOrganization.organization.id === organization?.id &&
+            userOrganization.role === 'ADMIN',
+        ),
+      'allow',
+    );
+
+    await this._permissionsService.addRuleToPolicy<Organization>(
+      globalUserPolicy,
+      'create',
+      Organization,
+      (user) => user.organizations.length < 5,
+      'allow',
+    );
+
+    const globalAdminPolicy =
+      await this._permissionsService.createPolicy(`Admin`);
+
+    await this._permissionsService.addRuleToPolicy<Organization>(
+      globalAdminPolicy,
+      'delete',
+      Organization,
+      () => true,
+      'allow',
+    );
+
+    await this._permissionsService.addRuleToPolicy<Organization>(
+      globalAdminPolicy,
+      'list',
+      Organization,
+      () => true,
+      'allow',
+    );
   }
 
-  //TODO: Secure this method
-  async getOrganizationById(
-    id: string,
-  ): Promise<Omit<Organization, 'actions'> | null> {
-    return this._prismaService.organization.findUnique({
+  async getFullOrganizationById(
+    id: IdOf<Organization>,
+    performer: Omit<User, 'actions'>,
+  ): Promise<FullOrganization | null> {
+    if (
+      !(await this._permissionsService.canUserPerformAction<Organization>(
+        performer,
+        'read',
+        id,
+        Organization,
+      ))
+    ) {
+      return null;
+    }
+
+    const organization = await this._prismaService.organization.findUnique({
       where: { id },
       include: {
         teams: {
           select: {
             id: true,
-            name: true,
           },
         },
         users: {
@@ -61,7 +220,6 @@ export class OrganizationsService {
             user: {
               select: {
                 id: true,
-                name: true,
               },
             },
           },
@@ -73,138 +231,109 @@ export class OrganizationsService {
         },
       },
     });
+
+    if (!organization) {
+      return null;
+    }
+
+    const result: FullOrganization = {
+      id: organization.id,
+      name: organization.name,
+      teams: [],
+      users: [],
+      owner: null,
+    };
+
+    result.owner = await this._usersService.getListsUserById(
+      organization.owner.id,
+      performer,
+    );
+
+    result.teams = await Promise.all(
+      organization.teams.map(async ({ id }) =>
+        this._teamsService.getFullTeamById(id, performer),
+      ),
+    );
+
+    result.users = await Promise.all(
+      organization.users.map(async ({ user }) =>
+        this._usersService.getListsUserById(user.id, performer),
+      ),
+    );
+
+    return result;
+  }
+
+  async getListsOrganizationById(
+    id: IdOf<Organization>,
+    performer: Omit<User, 'actions'>,
+  ): Promise<ListOrganization | null> {
+    if (
+      !(await this._permissionsService.canUserPerformAction<Organization>(
+        performer,
+        'list',
+        id,
+        Organization,
+      ))
+    ) {
+      return null;
+    }
+
+    return this._prismaService.organization.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+  }
+
+  async getOrganizationById(
+    id: IdOf<Organization>,
+    performer: Omit<User, 'actions'>,
+  ): Promise<FullOrganization | ListOrganization | null> {
+    const fullOrganization = await this.getFullOrganizationById(id, performer);
+    if (!fullOrganization) {
+      return this.getListsOrganizationById(id, performer);
+    }
+    return fullOrganization;
   }
 
   async getOrganizationsForUser(
     userId: IdOf<User>,
-  ): Promise<Omit<Organization, 'actions'>[]> {
-    if (!this._authContext.authenticated)
-      throw new UnauthorizedException('User not authenticated');
-
-    const organizations = await this._prismaService.organization.findMany({
-      where: {
-        users: {
-          some: {
-            user: {
-              id: userId,
-            },
-          },
-        },
-      },
-      include: {
-        teams: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        users: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-        owner: {
-          select: {
-            id: true,
-          },
-        },
+    user: Omit<User, 'actions'>,
+  ): Promise<(FullOrganization | ListOrganization | null)[]> {
+    const organizationIds = await this._prismaService.organization.findMany({
+      where: { users: { some: { userId } } },
+      select: {
+        id: true,
       },
     });
 
-    const finalOrganizations: any[] = [];
-
-    for (const organization of organizations) {
-      if (
-        !(await this._permissionsService.canUserPerformAction<Organization>(
-          this._authContext.user,
-          'read',
-          organization.id,
-          Organization,
-        ))
-      ) {
-        if (
-          await this._permissionsService.canUserPerformAction<Organization>(
-            this._authContext.user,
-            'list',
-            organization.id,
-            Organization,
-          )
-        ) {
-          finalOrganizations.push({
-            id: organization.id,
-            name: organization.name,
-          });
-        }
-      } else {
-        const finalTeams: any[] = [];
-        const finalUsers: any[] = [];
-
-        for (const team of organization.teams) {
-          if (
-            await this._permissionsService.canUserPerformAction<Team>(
-              this._authContext.user,
-              'list',
-              team.id,
-              Team,
-            )
-          ) {
-            finalTeams.push({
-              id: team.id,
-              name: team.name,
-            });
-          }
-        }
-
-        for (const user of organization.users) {
-          if (
-            await this._permissionsService.canUserPerformAction<User>(
-              this._authContext.user,
-              'list',
-              user.user.id,
-              User,
-            )
-          ) {
-            finalUsers.push({
-              id: user.user.id,
-              name: user.user.name,
-              role: user.role,
-            });
-          } else {
-            finalUsers.push({
-              id: 0,
-              name: 'Anonymous',
-              role: user.role,
-            });
-          }
-        }
-
-        finalOrganizations.push({
-          ...organization,
-          teams: finalTeams,
-          users: finalUsers,
-        });
-      }
-    }
-
-    return finalOrganizations;
+    return Promise.all(
+      organizationIds.map(({ id }) => this.getOrganizationById(id, user)),
+    );
   }
 
   async createOrganization(
-    name: string,
-  ): Promise<Omit<Organization, 'actions'>> {
-    if (!this._authContext.authenticated)
-      throw new Error('User not authenticated');
-
-    const user = this._authContext.user;
+    options: Pick<Omit<Organization, 'actions'>, 'name'>,
+    owner: Omit<User, 'actions'>,
+    performer: Omit<User, 'actions'>,
+  ): Promise<Omit<Organization, 'actions'> | null> {
+    if (
+      !(await this._permissionsService.canUserPerformAction<Organization>(
+        performer,
+        'create',
+        null,
+        Organization,
+      ))
+    ) {
+      return null;
+    }
 
     return this._prismaService.organization.create({
       data: {
-        name,
+        name: options.name,
         teams: {
           create: [
             {
@@ -214,14 +343,14 @@ export class OrganizationsService {
                   role: 'ADMIN',
                   user: {
                     connect: {
-                      id: user.id,
+                      id: owner.id,
                     },
                   },
                 },
               },
               owner: {
                 connect: {
-                  id: user.id,
+                  id: owner.id,
                 },
               },
             },
@@ -232,14 +361,14 @@ export class OrganizationsService {
             role: 'ADMIN',
             user: {
               connect: {
-                id: user.id,
+                id: owner.id,
               },
             },
           },
         },
         owner: {
           connect: {
-            id: user.id,
+            id: owner.id,
           },
         },
       },
@@ -253,9 +382,6 @@ export class OrganizationsService {
           },
         },
         users: {
-          select: {
-            role: true,
-          },
           include: {
             user: {
               select: {

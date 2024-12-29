@@ -1,76 +1,84 @@
 <script setup lang="ts">
-import { useUserStore } from '~/stores/userStore';
-import DooneLogo from '~/components/DooneLogo.vue';
-import {
-  DropdownMenu,
-  DropdownMenuShortcut,
-} from '~/components/ui/dropdown-menu';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from '~/components/ui/command';
-import { Popover } from '~/components/ui/popover';
-import { cn } from '~/lib/utils';
-import { DialogFooter, DialogHeader } from '~/components/ui/dialog';
+  import { useUserStore } from '~/stores/userStore';
+  import DooneLogo from '~/components/DooneLogo.vue';
+  import {
+    DropdownMenu,
+    DropdownMenuShortcut,
+  } from '~/components/ui/dropdown-menu';
+  import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+    CommandSeparator,
+  } from '~/components/ui/command';
+  import { Popover } from '~/components/ui/popover';
+  import { cn } from '~/lib/utils';
+  import { DialogFooter, DialogHeader } from '~/components/ui/dialog';
 
-const user = useUserStore();
-const organizationStore = useOrganizationStore();
-const router = useRouter();
+  const user = useUserStore(); 
+  const organizationStore = useOrganizationStore();
+  const router = useRouter();
 
-const recentProjects = [
-  {
-    id: 1,
-    name: "Project 1",
-    organization: "Personal",
-    starred: true,
-  },
-  {
-    id: 2,
-    name: "Project 2",
-    organization: "Personal",
-    starred: true,
-  },
-  {
-    id: 3,
-    name: "Project 3",
-    organization: "Work",
-    starred: false,
-  },
-  {
-    id: 4,
-    name: "Project 4",
-    organization: "Work",
-    starred: false,
-  },
-  {
-    id: 5,
-    name: "Project 5",
-    organization: "Personal",
-    starred: false,
-  },
-];
-
-const starredOpen = ref(false);
-const recentOpen = ref(false);
-
-const showNewOrganizationDialog = ref(false);
-const organizationOpen = ref(false);
-const organizationNewOpen = ref(false);
-const selectedOrganization = ref<Organization | null>(null);
-
-onMounted(() => {
-  selectedOrganization.value = organizationStore.organizations[0];
-});
+  const recentProjects = [
+    {
+      id: 1,
+      name: "Project 1",
+      organization: "Personal",
+      starred: true,
+    },
+    {
+      id: 2,
+      name: "Project 2",
+      organization: "Personal",
+      starred: true,
+    },
+    {
+      id: 3,
+      name: "Project 3",
+      organization: "Work",
+      starred: false,
+    },
+    {
+      id: 4,
+      name: "Project 4",
+      organization: "Work",
+      starred: false,
+    },
+    {
+      id: 5,
+      name: "Project 5",
+      organization: "Personal",
+      starred: false,
+    },
+  ];
+  
+  const starredOpen = ref(false);
+  const recentOpen = ref(false);
+  
+  const showNewOrganizationDialog = ref(false);
+  const organizationOpen = ref(false);
+  const organizationNewOpen = ref(false);
+  
+  onMounted(async () => {
+    await organizationStore.fetchOrganizations();
+  });
+  
+  const createOrganization = async () => {
+    const organizationName = document.getElementById('name') as HTMLInputElement;
+    if (!organizationName.value) {
+      return;
+    }
+    await organizationStore.createOrganization(organizationName.value);
+    showNewOrganizationDialog.value = false;
+  };
 </script>
 
 <template>
   <div class="h-screen w-screen flex flex-col">
-    <div v-if="!user.getMe?.emailVerified" class="flex flex-row gap-2 w-screen h-10 bg-yellow-100 text-yellow-800 justify-center items-center">
+    <div v-if="!user.me?.emailVerified" class="flex flex-row gap-2 w-screen h-10 bg-yellow-100 text-yellow-800 justify-center items-center">
       <p class="text-sm">
         Your email is not verified. Please verify your email address.
       </p>
@@ -87,46 +95,39 @@ onMounted(() => {
                 role="combobox"
                 :aria-expanded="organizationOpen"
                 aria-label="Select organization"
-                :class="cn('w-[200px] justify-between', $attrs.class ?? '')"
+                :class="cn('w-fit items-center justify-between', $attrs.class ?? '')"
                 :disabled="organizationStore.organizations.length === 0"
               >
                 <template v-if="organizationStore.organizations.length > 0">
                   <Avatar class="mr-2 h-5 w-5">
-                    <AvatarImage
-                      :src="`https://avatar.vercel.sh/${organizationStore.selectedOrganization?.name}.png`"
-                      :alt="organizationStore.selectedOrganization?.name"
-                    />
+                    <GradientImage :seed="organizationStore.selectedOrganization?.id" class="scale-150"/>
                   </Avatar>
                   {{ organizationStore.selectedOrganization?.name }}
                 </template>
                 <template v-else>
                   <span class="text-gray-400">No Organization</span>
                 </template>
-                <i class="ml-auto h-4 w-4 shrink-0 opacity-50 fas fa-sort"/>
+                <i class="ml-auto shrink-0 opacity-50 fas fa-sort fa-fw"/>
               </Button>
             </PopoverTrigger>
             <PopoverContent class="w-[200px] p-0">
-              <Command :filter-function="(list, term) => list.filter(i => (i as Organization).name?.toLowerCase()?.includes(term)) as Organization[]">
+              <Command :filter-function="(list, term) => list.filter(i => (i as FullOrganization).name?.toLowerCase()?.includes(term)) as FullOrganization[]">
                 <CommandList>
                   <CommandInput placeholder="Search organization..." />
                   <CommandEmpty>No organization found.</CommandEmpty>
                   <CommandGroup>
                     <CommandItem
-                      v-for="organization in organizationStore.organizations"
+                      v-for="organization in organizationStore.organizations.filter((o) => 'users' in o).filter((o) => o.users.some((u) => u?.id === user.me?.id))"
                       :key="organization.id"
                       :value="organization"
                       class="text-sm"
                       @select="() => {
-                        selectedOrganization = organization
+                        organizationStore.selectedOrganization = organization
                         organizationNewOpen = false
                       }"
                     >
                       <Avatar class="mr-2 h-5 w-5">
-                        <AvatarImage
-                          :src="`https://avatar.vercel.sh/${organization.name}.png`"
-                          :alt="organization.name"
-                          :class="cn(selectedOrganization?.id !== organization.id ? 'grayscale' : '')"
-                        />
+                        <GradientImage :seed="organization.id" :class="cn(organizationStore.selectedOrganization?.id !== organization.id ? 'grayscale' : '')"/>
                       </Avatar>
                       {{ organization.name }}
                       <i
@@ -178,11 +179,12 @@ onMounted(() => {
                 <Button variant="outline" @click="showNewOrganizationDialog = false">
                   Cancel
                 </Button>
-                <Button type="submit">
+                <Button type="submit" variant="default" @click="createOrganization">
                   Continue
                 </Button>
               </DialogFooter>
-            </div></DialogContent>
+            </div>
+          </DialogContent>
         </Dialog>
         <DropdownMenu @update:open="(isOpen) => recentOpen = isOpen">
           <DropdownMenuTrigger as-child>
@@ -243,10 +245,10 @@ onMounted(() => {
           <DropdownMenuTrigger as-child>
             <Button variant="ghost" class="relative h-8 w-8 rounded-full">
               <Avatar class="h-8 w-8">
-                <AvatarImage :src="'https://api.dicebear.com/9.x/notionists/svg?scale=150&translateY=10&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&seed=' + user.getMe?.id" />
+                <AvatarImage :src="'https://api.dicebear.com/9.x/notionists/svg?scale=150&translateY=10&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&seed=' + user.me?.id" />
                 <AvatarFallback :delay-ms="1000">
-                  {{ user.getMe?.name[0] }}
-                  {{ user.getMe?.name[1] }}
+                  {{ user.me?.name[0] }}
+                  {{ user.me?.name[1] }}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -255,10 +257,10 @@ onMounted(() => {
             <DropdownMenuLabel class="font-normal flex">
               <div class="flex flex-col space-y-1">
                 <p class="text-sm font-medium leading-none">
-                  {{ user.getMe?.name }}
+                  {{ user.me?.name }}
                 </p>
                 <p class="text-xs leading-none text-muted-foreground">
-                  {{ user.getMe?.email }}
+                  {{ user.me?.email }}
                 </p>
               </div>
             </DropdownMenuLabel>

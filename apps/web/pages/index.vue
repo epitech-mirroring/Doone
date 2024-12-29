@@ -10,7 +10,7 @@ useSeoMeta({
 });
 
 onMounted(() => {
-  if (userStore.getMe === null && userStore.isLoggedIn) { // WARNING: This will probably break the dashboard showing no organization
+  if (userStore.me === null && userStore.isLoggedIn) { // WARNING: This will probably break the dashboard showing no organization
     userStore.updateMe();
   }
 });
@@ -34,10 +34,10 @@ onMounted(() => {
         <div v-else id="auth" class="space-x-2">
           <Button variant="link" @click="router.push('/dashboard')">
             <Avatar class="h-8 w-8">
-              <AvatarImage :src="'https://api.dicebear.com/9.x/notionists/svg?scale=150&translateY=10&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&seed=' + userStore.getMe?.id" />
+              <AvatarImage :src="'https://api.dicebear.com/9.x/notionists/svg?scale=150&translateY=10&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&seed=' + userStore.me?.id" />
               <AvatarFallback :delay-ms="1000">
-                {{ userStore.getMe?.name[0] }}
-                {{ userStore.getMe?.name[1] }}
+                {{ userStore.me?.name[0] }}
+                {{ userStore.me?.name[1] }}
               </AvatarFallback>
             </Avatar>
           </Button>
