@@ -72,6 +72,9 @@ export const useOrganizationStore = defineStore('organization', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name }),
     });
+    if (!response.ok) {
+      return { error: response.status, message: 'You can\'t create organizations' };
+    }
     const data = await response.json();
     organizations.value.push(data);
     selectOrganization(data);

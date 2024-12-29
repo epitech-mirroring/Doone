@@ -266,15 +266,15 @@
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem @select="router.push('/dashboard/profile')">
                 Profile
                 <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem @select="router.push('/dashboard/billing')">
                 Billing
                 <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem @select="router.push('/dashboard/settings')">
                 Settings
                 <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
               </DropdownMenuItem>

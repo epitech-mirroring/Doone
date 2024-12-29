@@ -8,10 +8,5 @@
   },
   "devDependencies": {
     "concurrently": "^6.2.2"
-  },
-  "dependencies": {
-    "aws-sdk": "^2.1692.0",
-    "mock-aws-s3": "^4.0.2",
-    "nock": "^13.5.6"
   }
 }

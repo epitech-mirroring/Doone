@@ -1,6 +1,6 @@
 import color from 'tinycolor2';
 
-async function hash(str: string): Promise<number> {
+export async function hash(str: string): Promise<number> {
   let sum = 0;
   const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   for (const n of new Uint8Array(buffer)) {

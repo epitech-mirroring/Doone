@@ -12,6 +12,7 @@ import { Separator } from '~/components/ui/separator';
 
 const router = useRouter();
 const user = useUserStore();
+const organizationStore = useOrganizationStore();
 
 const steps: {
   step: number;
@@ -62,6 +63,19 @@ const steps: {
     description: 'Create or join an existing organization',
     altDescription: 'Enter your invitation code or create a new organization',
     icon: 'fa-buildings',
+    onSubmit: async (values: {
+      organizationLogo: FileList;
+      organizationName: string;
+      organizationDescription: string;
+      inviteCode: string;
+    }) => {
+      const r = await organizationStore.createOrganization(
+        values.organizationName,
+      );
+      if (r?.error) {
+        return { error: r.message, field: 'organizationName' };
+      }
+    },
   },
   {
     step: 4,
@@ -109,9 +123,9 @@ const formSchema = [
   z
     .object({
       organizationLogo:
-        typeof window === 'undefined' ? z.any() : z.instanceof(FileList),
+        typeof window === 'undefined' ? z.any().optional() : z.instanceof(FileList).optional(),
       organizationName: z.string().min(2).max(20),
-      organizationDescription: z.string().max(100).nullable(),
+      organizationDescription: z.string().max(100).nullable().optional(),
     })
     .or(
       z.object({
@@ -146,10 +160,12 @@ const getPasswordStrength = (
 const getImageData = (e: Event) => {
   const dataTransfer = new DataTransfer();
 
-  Array.from((e.target as HTMLInputElement).files).forEach((file) => {
+  const fileList = (e.target as HTMLInputElement).files as FileList;
+
+  Array.from(fileList).forEach((file) => {
     dataTransfer.items.add(file);
   });
-
+  
   const files = dataTransfer.files;
   const displayUrl = URL.createObjectURL(files[0]);
 
